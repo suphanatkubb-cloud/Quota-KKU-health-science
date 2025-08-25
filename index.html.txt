@@ -1,0 +1,565 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>NETSAT - KKU สายสุขภาพ (Calculator)</title>
+<style>
+  :root{
+    --bg1:#fff7fb;
+    --bg2:#fff2f8;
+    --card:#ffffffcc;
+    --accent:#ff79c6;
+    --soft:#ffd6e8;
+    --muted:#8b8b98;
+    --shadow: 0 6px 18px rgba(133,120,160,0.08);
+    --shadow-press: 0 10px 25px rgba(133,120,160,0.12);
+    --glass: linear-gradient(135deg, rgba(255,255,255,0.7), rgba(255,255,255,0.45));
+  }
+
+  body{
+    margin:0;
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    background: radial-gradient(1200px 600px at 10% 10%, #fff1f8 0%, transparent 10%),
+                radial-gradient(1000px 500px at 90% 90%, #f0fbff 0%, transparent 12%),
+                linear-gradient(180deg,#fffafc 0%, #fffefb 100%);
+    color:#222034;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+    padding:28px;
+  }
+
+  header{
+    text-align:center;
+    margin-bottom:14px;
+  }
+
+  .netsat{
+    font-weight:900;
+    font-size:48px;
+    letter-spacing:4px;
+    color: #ff6fa3;
+    background: linear-gradient(90deg,#ff6fa3,#ffb0d9 60%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 6px 18px rgba(255,110,170,0.08);
+    margin: 6px 0 4px;
+  }
+  .sub{
+    font-size:14px;
+    color:var(--muted);
+  }
+
+  .container{
+    max-width:980px;
+    margin:0 auto;
+    display:grid;
+    grid-template-columns: 420px 1fr;
+    gap:20px;
+    align-items:start;
+  }
+
+  .card{
+    background:var(--card);
+    border-radius:18px;
+    padding:18px;
+    box-shadow:var(--shadow);
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(255,255,255,0.6);
+  }
+
+  .left .card{
+    position:sticky;
+    top:28px;
+  }
+
+  h2{ margin:0 0 8px 0; font-size:18px; }
+  label{ display:block; font-size:13px; color:#4b4b63; margin-bottom:6px; }
+  .inputs{ display:grid; gap:10px; }
+  .row {
+    display:flex; gap:10px; align-items:center;
+  }
+  input[type=number]{
+    width:100%;
+    padding:10px 12px;
+    border-radius:10px;
+    border:1px solid #f0dff0;
+    background: linear-gradient(180deg,#fff,#fffafc);
+    font-size:14px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.6);
+  }
+  .hint{ font-size:12px; color:var(--muted); }
+
+  /* faculties list */
+  .fac-list{ display:grid; gap:10px; margin-top:10px; }
+  .fac{
+    display:flex; align-items:center; gap:10px;
+    padding:10px; border-radius:12px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(255,255,255,0.7));
+    border:1px solid rgba(200,185,210,0.35);
+    transition: transform .14s ease, box-shadow .14s ease;
+    cursor:pointer;
+  }
+  .fac.selected{
+    transform: translateY(-6px);
+    box-shadow: var(--shadow-press);
+    border-color: #ffbde6;
+    outline: 3px solid rgba(255,190,220,0.18);
+  }
+  .fac input[type=checkbox]{ width:18px; height:18px; accent-color:#50c878; }
+  .fac .name{ font-weight:700; font-size:14px; }
+  .fac .mini{ font-size:12px; color:var(--muted); margin-left:auto; }
+
+  .actions{ display:flex; gap:8px; margin-top:12px; }
+  button{
+    padding:10px 14px; border-radius:12px; border:0;
+    font-weight:700;
+    cursor:pointer;
+  }
+  .btn-calc{ background: linear-gradient(90deg,#ff9fc7,#ffd5f0); color:#6b064b; box-shadow: 0 8px 18px rgba(255,150,190,0.12); }
+  .btn-clear{ background:linear-gradient(90deg,#eaeefc,#f2f8ff); color:#4b4b63; border:1px solid #eef3ff; }
+
+  /* results */
+  .results{ display:flex; flex-direction:column; gap:12px; }
+  .result-card{
+    padding:12px; border-radius:12px; background: linear-gradient(180deg,#ffffff,#fffdfb);
+    border:1px solid rgba(220,210,225,0.4);
+  }
+  .res-head{ display:flex; align-items:center; gap:8px; }
+  .res-title{ font-weight:800; font-size:15px; }
+  .res-min{ font-size:12px; color:#a05b7b; margin-left:auto; }
+
+  /* progress bar */
+  .bar-wrap{ margin-top:10px; }
+  .bar{
+    height:18px; border-radius:10px; overflow:hidden; background:linear-gradient(90deg,#f3f3f8,#fff);
+    border:1px solid rgba(0,0,0,0.04);
+  }
+  .bar-inner{
+    height:100%;
+    width:0%;
+    transition: width .7s ease;
+    display:flex; align-items:center; padding-left:8px; font-weight:700; color:#fff;
+    text-shadow:0 1px 2px rgba(0,0,0,0.18);
+  }
+
+  /* multi-gradient presets for variety */
+  .g1{ background: linear-gradient(90deg,#ff9fc7,#ffd5f0); color: #3b0136; }
+  .g2{ background: linear-gradient(90deg,#ffecd2,#fcb69f); color:#4b2405; }
+  .g3{ background: linear-gradient(90deg,#d1fff3,#b9f5e0); color:#0b4536; }
+  .g4{ background: linear-gradient(90deg,#fff7b2,#ffd6a5); color:#5a3b00; }
+  .g5{ background: linear-gradient(90deg,#c7d2ff,#e8d4ff); color:#2b1b5a; }
+  .g6{ background: linear-gradient(90deg,#ffeadb,#ffd0f2); color:#4b273a; }
+
+  .small-icons{ font-size:14px; margin-left:6px; }
+  .ok{ color:#2fae6e; font-weight:800; margin-left:8px; }
+
+  footer{ text-align:center; color:var(--muted); margin-top:18px; font-size:13px; }
+
+  /* responsive */
+  @media (max-width:920px){
+    .container{ grid-template-columns: 1fr; }
+    .netsat{ font-size:40px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div style="display:flex;align-items:center;justify-content:center;gap:10px;">
+    <span style="font-size:28px;background:linear-gradient(90deg,#fff3f7,#fff8fb);padding:8px 12px;border-radius:14px;">🌸</span>
+    <div style="text-align:center">
+      <div class="netsat">NETSAT</div>
+      <div class="sub">คำนวณคะแนน NETSAT — มหาวิทยาลัยขอนแก่น (สายสุขภาพ)</div>
+    </div>
+    <span style="font-size:28px;background:linear-gradient(90deg,#fff3f7,#fff8fb);padding:8px 12px;border-radius:14px;">💖</span>
+  </div>
+</header>
+
+<main class="container">
+  <!-- left: inputs & faculty choices -->
+  <div class="left">
+    <div class="card">
+      <h2>กรอกคะแนน (เต็ม 100 ทุกวิชา)</h2>
+      <div class="hint">กรอกตัวเลข 0–100 เท่านั้น</div>
+
+      <div class="inputs" style="margin-top:12px;">
+        <div>
+          <label>ชีววิทยา</label>
+          <input id="bio" type="number" min="0" max="100" value="0" />
+        </div>
+        <div>
+          <label>เคมี</label>
+          <input id="chem" type="number" min="0" max="100" value="0" />
+        </div>
+        <div class="row">
+          <div style="flex:1">
+            <label>ฟิสิกส์</label>
+            <input id="phys" type="number" min="0" max="100" value="0" />
+          </div>
+          <div style="flex:1">
+            <label>คณิตศาสตร์</label>
+            <input id="math" type="number" min="0" max="100" value="0" />
+          </div>
+        </div>
+        <div class="row">
+          <div style="flex:1">
+            <label>ภาษาอังกฤษ</label>
+            <input id="eng" type="number" min="0" max="100" value="0" />
+          </div>
+          <div style="flex:1">
+            <label>ภาษาไทย</label>
+            <input id="thai" type="number" min="0" max="100" value="0" />
+          </div>
+        </div>
+        <div>
+          <label>วิทยาศาสตร์และเทคโนโลยี (ถ้ามี)</label>
+          <input id="sci" type="number" min="0" max="100" value="0" />
+          <div class="hint">*ใช้โดยคณะที่ระบุเท่านั้น (ถ้าไม่ใช้ให้ใส่ 0)</div>
+        </div>
+      </div>
+
+      <h2 style="margin-top:14px;">เลือกคณะที่ต้องการคำนวณ</h2>
+      <div class="fac-list" id="fac-list">
+        <!-- each fac is clickable -->
+        <label class="fac" data-code="med">
+          <input type="checkbox"/>
+          <div class="name">คณะแพทยศาสตรบัณฑิต (แพทย์)</div>
+          <div class="mini">weights: B30 C20 P15 M15 EN10 TH10</div>
+        </label>
+
+        <label class="fac" data-code="pharm">
+          <input type="checkbox"/>
+          <div class="name">คณะเภสัชศาสตร์ (หลักสูตรปกติ)</div>
+          <div class="mini">weights: B20 C30 P10 M20 EN20</div>
+        </label>
+
+        <label class="fac" data-code="vet">
+          <input type="checkbox"/>
+          <div class="name">คณะสัตวแพทยศาสตรบัณฑิต</div>
+          <div class="mini">weights: B15 C15 P15 M15 EN25 TH15 (min total 30)</div>
+        </label>
+
+        <label class="fac" data-code="nurse">
+          <input type="checkbox"/>
+          <div class="name">คณะพยาบาลศาสตรบัณฑิต</div>
+          <div class="mini">weights: B20 C15 P15 M20 EN20 TH10</div>
+        </label>
+
+        <label class="fac" data-code="radi">
+          <input type="checkbox"/>
+          <div class="name">รังสีเทคนิค (ภาคปกติ)</div>
+          <div class="mini">weights: B22.5 C15 P22.5 M15 EN20 TH10</div>
+        </label>
+
+        <label class="fac" data-code="public">
+          <input type="checkbox"/>
+          <div class="name">สาธารณสุขศาสตร์</div>
+          <div class="mini">weights: B15 C15 P15 M15 EN15 TH10 Sci15</div>
+        </label>
+
+        <label class="fac" data-code="medtech">
+          <input type="checkbox"/>
+          <div class="name">เทคนิคการแพทย์</div>
+          <div class="mini">weights: B25 C25 P10 M10 EN10 TH10 Sci10</div>
+        </label>
+      </div>
+
+      <div class="actions">
+        <button class="btn-calc" id="calcBtn">คำนวณคะแนน ✨</button>
+        <button class="btn-clear" id="clearBtn">ล้างค่า ✖️</button>
+        <div style="flex:1"></div>
+        <button id="selectAll" class="btn-clear" title="เลือกทั้งหมด">เลือกทั้งหมด ✅</button>
+      </div>
+
+      <div style="margin-top:12px; font-size:13px; color:#6b566b;">
+        <span class="small-icons">⭐</span> คณะแพทยศาสตร์: แต่ละวิชา <strong>ขั้นต่ำ 30</strong> และ <strong>คะแนนรวมขั้นต่ำ 50</strong> เพื่อผ่านเงื่อนไข.<br>
+        <span class="small-icons">🐾</span> สัตวแพทย์: คะแนนรวมขั้นต่ำ <strong>30</strong> (ตั้งค่าเป็น 30/100).
+      </div>
+    </div>
+  </div>
+
+  <!-- right: results -->
+  <div>
+    <div class="card">
+      <h2>ผลลัพธ์</h2>
+      <div class="hint">เลือกคณะจากด้านซ้าย แล้วกด "คำนวณคะแนน"</div>
+      <div id="results" class="results" style="margin-top:12px;">
+        <!-- JS will inject result-card blocks here -->
+      </div>
+    </div>
+
+    <div style="height:12px"></div>
+    <div class="card" style="margin-top:12px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="font-size:20px">💟</div>
+        <div>
+          <div style="font-weight:800">รายละเอียดการคำนวณ</div>
+          <div class="hint">คะแนนคำนวณ = (คะแนนวิชานั้น / 100) × น้ำหนัก(%) แล้วรวม (ผลลัพธ์เป็นคะแนนเต็ม 100)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  ออกแบบธีมน่ารักหวาน ๆ — เกรดแสดงเป็นคะแนนเต็ม 100 • บันทึกไฟล์นี้เป็น .html เพื่อใช้งาน
+</footer>
+
+<script>
+  const faculties = {
+    med: {
+      title: "คณะแพทยศาสตรบัณฑิต (แพทย์)",
+      weights: { bio:30, chem:20, phys:15, math:15, eng:10, thai:10 },
+      minPerSubject: 30,
+      minTotal: 50
+    },
+    pharm: {
+      title: "คณะเภสัชศาสตร์ (หลักสูตรปกติ)",
+      weights: { bio:20, chem:30, phys:10, math:20, eng:20 },
+      minPerSubject: null,
+      minTotal: null
+    },
+    vet: {
+      title: "คณะสัตวแพทยศาสตรบัณฑิต",
+      weights: { bio:15, chem:15, phys:15, math:15, eng:25, thai:15 },
+      minPerSubject: null,
+      minTotal: 30
+    },
+    nurse: {
+      title: "คณะพยาบาลศาสตรบัณฑิต",
+      weights: { bio:20, chem:15, phys:15, math:20, eng:20, thai:10 }
+    },
+    radi: {
+      title: "รังสีเทคนิค (ภาคปกติ)",
+      weights: { bio:22.5, chem:15, phys:22.5, math:15, eng:20, thai:10 }
+    },
+    public: {
+      title: "สาธารณสุขศาสตร์",
+      weights: { bio:15, chem:15, phys:15, math:15, eng:15, thai:10, sci:15 }
+    },
+    medtech: {
+      title: "เทคนิคการแพทย์",
+      weights: { bio:25, chem:25, phys:10, math:10, eng:10, thai:10, sci:10 }
+    }
+  };
+
+  // UI hooks
+  const facList = document.getElementById('fac-list');
+  const facEls = facList.querySelectorAll('.fac');
+  const calcBtn = document.getElementById('calcBtn');
+  const clearBtn = document.getElementById('clearBtn');
+  const selectAllBtn = document.getElementById('selectAll');
+  const resultsDiv = document.getElementById('results');
+
+  // clicking row toggles checkbox + class
+  facEls.forEach(f=>{
+    f.addEventListener('click', (e)=>{
+      if(e.target.tagName === 'INPUT') return; // let checkbox handle
+      const cb = f.querySelector('input[type=checkbox]');
+      cb.checked = !cb.checked;
+      f.classList.toggle('selected', cb.checked);
+    });
+    f.querySelector('input[type=checkbox]').addEventListener('change', (ev)=>{
+      f.classList.toggle('selected', ev.target.checked);
+    });
+  });
+
+  selectAllBtn.addEventListener('click', ()=>{
+    facEls.forEach(f=>{
+      const cb = f.querySelector('input[type=checkbox]');
+      cb.checked = true;
+      f.classList.add('selected');
+    });
+  });
+
+  clearBtn.addEventListener('click', ()=>{
+    // clear scores & uncheck
+    ['bio','chem','phys','math','eng','thai','sci'].forEach(id=>{
+      document.getElementById(id).value = 0;
+    });
+    facEls.forEach(f=>{
+      const cb = f.querySelector('input[type=checkbox]');
+      cb.checked = false;
+      f.classList.remove('selected');
+    });
+    resultsDiv.innerHTML = '';
+  });
+
+  calcBtn.addEventListener('click', ()=>{
+    resultsDiv.innerHTML = '';
+    // read scores (safely parse)
+    const scores = {
+      bio: sanitize('bio'),
+      chem: sanitize('chem'),
+      phys: sanitize('phys'),
+      math: sanitize('math'),
+      eng: sanitize('eng'),
+      thai: sanitize('thai'),
+      sci: sanitize('sci')
+    };
+
+    // validate min/max
+    for(const k in scores){
+      if(scores[k] === null){
+        alert('กรอกค่าตัวเลขให้ถูกต้อง (0–100) ทุกช่อง');
+        return;
+      }
+      if(scores[k] < 0 || scores[k] > 100){
+        alert('คะแนนต้องอยู่ระหว่าง 0 ถึง 100 เท่านั้น');
+        return;
+      }
+    }
+
+    // determine selected faculties
+    const selected = [];
+    facEls.forEach(f=>{
+      const cb = f.querySelector('input[type=checkbox]');
+      if(cb.checked) selected.push(f.dataset.code);
+    });
+
+    if(selected.length === 0){
+      alert('กรุณาเลือกคณะที่ต้องการคำนวณอย่างน้อย 1 คณะ');
+      return;
+    }
+
+    // compute for each selected fac
+    selected.forEach((code, idx)=>{
+      const fac = faculties[code];
+      const title = fac.title;
+      const weights = fac.weights;
+
+      // compute weighted sum
+      let total = 0;
+      const breakdown = [];
+      for(const sub in weights){
+        const w = weights[sub];
+        const value = ( (scores[sub] || 0) * (w/100) ); // portion out of 100
+        breakdown.push({ sub, w, raw: scores[sub]||0, contrib: value });
+        total += value;
+      }
+      // total now is out of 100 (because weights sum to 100)
+      total = Math.round(total * 100) / 100;
+
+      // determine pass/fail based on min rules
+      let passes = true;
+      const reasons = [];
+      if(fac.minPerSubject){
+        for(const sub in weights){
+          if((scores[sub]||0) < fac.minPerSubject){
+            passes = false;
+            reasons.push('คะแนนในแต่ละวิชาไม่ถึงขั้นต่ำ ' + fac.minPerSubject);
+            break;
+          }
+        }
+      }
+      if(fac.minTotal != null && total < fac.minTotal){
+        passes = false;
+        reasons.push('คะแนนรวมต่ำกว่าเกณฑ์ขั้นต่ำ ' + fac.minTotal);
+      }
+      // build result card
+      const rc = document.createElement('div');
+      rc.className = 'result-card';
+      // colorful gradient choice
+      const gs = ['g1','g2','g3','g4','g5','g6'];
+      const gCls = gs[idx % gs.length];
+
+      rc.innerHTML = `
+        <div class="res-head">
+          <div style="font-size:18px">${emojiFor(code)}</div>
+          <div class="res-title">${title}</div>
+          <div class="res-min">${passes ? '<span style="color:#2fae6e">✅ เข้าเกณฑ์</span>' : '<span style="color:#d05f7a">❌ ไม่เข้าเกณฑ์</span>'}</div>
+        </div>
+        <div style="margin-top:8px; font-size:13px; color:#5a3b52;">
+          คะแนนรวม: <strong>${total}</strong> / 100
+          <span style="margin-left:8px; color:#ffbe3b"> ${starsFrom(total)} </span>
+        </div>
+      `;
+
+      // if fail, show reasons
+      if(!passes){
+        const r = document.createElement('div');
+        r.style.marginTop='8px';
+        r.style.fontSize='13px';
+        r.style.color='#a03b5b';
+        r.innerHTML = '<strong>สาเหตุที่ไม่เข้าเกณฑ์:</strong> ' + reasons.join(' • ');
+        rc.appendChild(r);
+      } else {
+        const r = document.createElement('div');
+        r.style.marginTop='8px';
+        r.style.fontSize='13px';
+        r.style.color='#6a6a6a';
+        r.innerHTML = 'สถานะ: ผ่านเงื่อนไขพื้นฐาน ✨';
+        rc.appendChild(r);
+      }
+
+      // breakdown bars
+      breakdown.forEach((b,i)=>{
+        const wrap = document.createElement('div');
+        wrap.className = 'bar-wrap';
+        const subName = nameFor(b.sub);
+        // percent width = contribution (which is already out of 100)
+        const pct = Math.max(0, Math.min(100, Math.round(b.contrib*100)/100));
+        const bar = document.createElement('div');
+        bar.className='bar';
+        const inner = document.createElement('div');
+        inner.className='bar-inner ' + gCls;
+        inner.style.width = pct + '%';
+        inner.textContent = `${subName} ${b.raw} × ${b.w}% → ${round(b.contrib)} pts`;
+        bar.appendChild(inner);
+        wrap.appendChild(bar);
+        rc.appendChild(wrap);
+      });
+
+      // small legend
+      const note = document.createElement('div');
+      note.style.marginTop='8px';
+      note.style.fontSize='12px';
+      note.style.color='#6b6b76';
+      note.innerHTML = '<span style="background:#fff3f7;padding:6px;border-radius:8px;margin-right:8px">💖</span> แถบแสดงคะแนนตามสัดส่วน (เต็ม 100)';
+      rc.appendChild(note);
+
+      resultsDiv.appendChild(rc);
+      // animate width after insertion (to smooth)
+      setTimeout(()=> {
+        const inners = rc.querySelectorAll('.bar-inner');
+        inners.forEach((inn, j)=>{
+          const w = inn.style.width;
+          inn.style.width = '0%';
+          setTimeout(()=> inn.style.width = w, 60 + j*80);
+        });
+      }, 30);
+    });
+
+  });
+
+  // helpers
+  function sanitize(id){
+    const el = document.getElementById(id);
+    if(!el) return 0;
+    const v = el.value.trim();
+    if(v === '') return null;
+    const n = Number(v);
+    if(Number.isNaN(n)) return null;
+    return Math.round(n*100)/100;
+  }
+  function nameFor(k){
+    const map = { bio:'ชีววิทยา', chem:'เคมี', phys:'ฟิสิกส์', math:'คณิตศาสตร์', eng:'ภาษาอังกฤษ', thai:'ภาษาไทย', sci:'วิทย์และเทคโนโลยี' };
+    return map[k] || k;
+  }
+  function round(n){ return Math.round(n*100)/100; }
+  function emojiFor(code){
+    const map = { med:'🩺', pharm:'💊', vet:'🐾', nurse:'🩹', radi:'🔆', public:'🌿', medtech:'🧪' };
+    return map[code] || '🎓';
+  }
+  function starsFrom(total){
+    // 0-20 : 0, 21-40:1, 41-60:2,61-75:3,76-90:4,91-100:5
+    if(total >= 91) return '⭐⭐⭐⭐⭐';
+    if(total >= 75) return '⭐⭐⭐⭐ ⭐';
+    if(total >= 68) return '⭐⭐⭐ ⭐';
+    if(total >= 41) return '⭐⭐ ⭐';
+    if(total >= 21) return '⭐';
+    return '✩';
+  }
+</script>
+</body>
+</html>
